@@ -1,0 +1,94 @@
+\documentclass[17pt, t, lualatex]{beamer}
+
+\title{Abstraction, Composition, and Resolvable Ambiguity\\in Programming Language Implementation}
+\date{October 8, 2024}
+\institute[KTH]{KTH Royal Institute of Technology}
+\author{Viktor Palmkvist}
+
+\usepackage{amsmath,amssymb,mathtools}
+
+% Probably load as late as possible
+% Other options are
+% - engine=pdflatex to compile in pdfLaTeX (with different fonts),
+% - mathshape=rm to use serif font for math,
+% - mathsahpe=custom to not set any math font (so that you can define your own math fonts)
+\usetheme[engine=lualatex, mathshape=sf, fontdir=kthpq-files/fonts/]{kthpq}
+\setmonofont{VeraMo}[%
+Path = kthpq-files/fonts/,
+UprightFont = *no.ttf,
+BoldFont = *Bd.ttf,
+ItalicFont = *It.ttf,
+BoldItalicFont = *BI.ttf,
+Scale=.9,
+]
+
+\setbeamerfont{title}{size=\Large}
+
+
+% Custom colors (see beamercolorthemecustom.sty for more details)
+%\usecolortheme{custom}
+
+% Custom footline
+%% \useoutertheme[subsection=false]{miniframes}
+%% \makeatletter
+%% % helper
+%% \newcommand\letbeamertemplate[2]{%
+%%   \csletcs{beamer@@tmpl@#1}{beamer@@tmpl@#2}%
+%% }
+
+%% % Currently template `headline` is `miniframes theme`.
+%% % First, copy `headline` to `footline`.
+%% \letbeamertemplate{footline}{headline}
+%% % Then, reset `headline`
+%% \setbeamertemplate{headline}[KTH-full]
+%% \makeatother
+
+\setbeamertemplate{page number in head/foot}[totalframenumber]
+
+\makeatletter
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[colsep=1.5pt]{upper separation line head}%
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}{section in head/foot}%
+    \vskip2pt%
+    \begin{minipage}[c]{.8\paperwidth}%
+      \insertnavigation{\linewidth}%
+    \end{minipage}%%
+    \begin{minipage}[c]{.2\paperwidth}%
+      \hfill\usebeamercolor[fg]{page number in head/foot}\usebeamertemplate{page number in head/foot}\quad\mbox{}%
+    \end{minipage}%%
+    \vskip4pt % <- change here%
+  \end{beamercolorbox}%%
+  \begin{beamercolorbox}[colsep=1.5pt]{lower separation line head}%
+  \end{beamercolorbox}%
+}
+\makeatother
+
+\def\insertframetitle{}
+
+\begin{document}
+
+\inserttitlepage
+
+\section{Introduction}
+
+\insertsectionpage
+
+\begin{frame}{Frame title}
+\begin{block}{Block}
+\end{block}
+\end{frame}
+\begin{frame}{Frame title}
+\begin{block}{Block}
+\end{block}
+\end{frame}
+
+\section{Papers}
+\section[Implementing Languages]{Implementing DSLs and Programming Languages}
+\section[Ambiguity]{Syntactic Ambiguity in Programming Languages}
+\section[Data Structures]{High-Level Data Structures}
+\section{Conclusion}
+
+\insertendpage
+
+\end{document}

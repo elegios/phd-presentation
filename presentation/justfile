@@ -1,0 +1,13 @@
+use_direnv := "true"
+direnv := if use_direnv != "" { "direnv exec .." } else { "" }
+
+list_files := if `command -v sd && sd repo files` != "" { "sd repo files" } else { "rg --files" }
+
+build:
+  latexmk -g
+
+watch:
+  {{ list_files }} | entr -cc {{ direnv }} latexmk -g
+
+clean:
+  {{ direnv }} latexmk -C
