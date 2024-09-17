@@ -1,5 +1,8 @@
 use_direnv := "true"
+use_notify := "true"
+
 direnv := if use_direnv != "" { "direnv exec .." } else { "" }
+notify := if use_notify != "" { "sd misc notify-complete" } else { "" }
 
 list_files := if `command -v sd && sd repo files` != "" { "sd repo files" } else { "rg --files" }
 
@@ -7,7 +10,8 @@ build:
   latexmk -g
 
 watch:
-  {{ list_files }} | entr -cc {{ direnv }} latexmk -g
+  {{ list_files }} | entr -cc {{ direnv }} {{ notify }} latexmk -g
 
 clean:
   {{ direnv }} latexmk -C
+  rm build/*

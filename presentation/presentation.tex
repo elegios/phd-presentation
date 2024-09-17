@@ -1,4 +1,4 @@
-\documentclass[17pt, t, lualatex]{beamer}
+\documentclass[17pt, t, lualatex, onlytextwidth, compress]{beamer}
 
 \title{Abstraction, Composition, and Resolvable Ambiguity\\in Programming Language Implementation}
 \date{October 8, 2024}
@@ -6,6 +6,104 @@
 \author{Viktor Palmkvist}
 
 \usepackage{amsmath,amssymb,mathtools}
+\usepackage{tabularray}
+\usepackage{siunitx}
+\UseTblrLibrary{booktabs}
+\UseTblrLibrary{siunitx}
+\UseTblrLibrary{counter}
+\usepackage{soul}
+\usepackage{natbib}
+\usepackage{trimclip}
+\usepackage{tikz}
+\usepackage{tikz-qtree}
+\usetikzlibrary{tikzmark,calc,decorations.pathreplacing,positioning,fit,shapes,arrows.meta,backgrounds,shadows}
+
+\NewTableCommand{\tblronly}[2]{\only<#1>{#2}}
+
+\definecolor{codebackground}{rgb}{0.9,0.9,0.9}
+\definecolor{listinggray}{rgb}{0.95,0.95,0.95}
+\definecolor{framegray}{rgb}{0.9,0.9,0.9}
+\definecolor{ckeywords}{rgb}{0,0.4,0.4}
+\definecolor{ccomments}{rgb}{0,0.5,0.5}
+\definecolor{cstrings}{rgb}{0,0.5,0}
+\definecolor{cwarnings}{rgb}{1,0.5,0}
+
+\usepackage{listings}
+\lstset{%
+  escapechar=`,
+  xleftmargin=2em,
+  numbers=left,
+  frame=l,
+  backgroundcolor=\color{listinggray},
+  fillcolor=\color{framegray},
+  framesep=1.3em,
+  framexleftmargin=0.5em,
+  numberstyle=\normalfont\scriptsize,
+  framerule=0pt,
+  lineskip=-1pt,
+  basicstyle=\setlength{\lineskip}{-0.1pt}\ttfamily\selectfont\small,
+  identifierstyle={\color{black}},
+  keywordstyle={\color{ckeywords}},
+  stringstyle=\color{cstrings},
+  commentstyle={\color{ccomments}},
+}
+
+\lstdefinestyle{error}{
+  moredelim=**[is][\color{red}]{@}{@},
+}
+\lstdefinelanguage{RepCaml}[]{Caml}{
+  morekeywords={letop, letimpl, letrepr, repr},
+}
+\lstdefinelanguage{syncon}{
+  morekeywords={syntax, bind, after, before, scope, foldl, id, t},
+  morestring=[b]"%,
+}
+
+%% NOTE(vipa, 2024-09-19): Suppress the creation of a new section for the references
+\renewcommand{\bibsection}{}
+\renewcommand{\bibfont}{\small}
+
+\newbox\charbox
+\setbox\charbox\vbox{\hbox{Gg}}
+
+\DeclareRobustCommand{\nmark}[1]{%
+    \setbox0=\hbox{#1}%
+    \dimen0\wd0%
+    \divide\dimen0 by 2%
+    \,\begin{tikzpicture}[baseline=(a.base)]%
+        \useasboundingbox (-\the\dimen0,0pt) rectangle (\the\dimen0,1pt);
+        \node[circle,draw,outer sep=0pt,inner sep=0.1ex,anchor=center] (a) {#1};
+    \end{tikzpicture}\,%
+}
+
+\newcommand<>{\popup}[1]{%
+  \only{%
+  \raisebox{1ex}{\begin{tikzpicture}[overlay]%
+    \node[draw,fill=sand,drop shadow={},above left=5pt] (x) {#1};
+    \draw (0,0) edge[<-] (x.south east);
+  \end{tikzpicture}}}#2%
+}
+\newcommand<>{\popupr}[1]{%
+  \only{%
+  \raisebox{1ex}{\begin{tikzpicture}[overlay]%
+    \node[draw,fill=sand,drop shadow={},above right=5pt] (x) {#1};
+    \draw (0,0) edge[<-] (x.south west);
+  \end{tikzpicture}}}#2%
+}
+\newcommand<>{\popupcircle}[1]{%
+  \only{%
+  \raisebox{1ex}{\begin{tikzpicture}[overlay]%
+    \node[circle,inner sep=1pt,draw,fill=white,drop shadow={},above left=5pt] (x) {#1};
+    \draw (0,0) edge[latex-] (x.south east);
+  \end{tikzpicture}}}#2%
+}
+\newcommand<>{\popupcircler}[1]{%
+  \only{%
+  \raisebox{1ex}{\begin{tikzpicture}[overlay]%
+    \node[circle,inner sep=1pt,draw,fill=white,drop shadow={},above right=5pt] (x) {#1};
+    \draw (0,0) edge[latex-] (x.south west);
+  \end{tikzpicture}}}#2%
+}
 
 % Probably load as late as possible
 % Other options are
@@ -22,26 +120,23 @@ BoldItalicFont = *BI.ttf,
 Scale=.9,
 ]
 
+\setbeamerfont{block title}{size=\normalsize}
+\setbeamerfont{block body}{size=\small}
+\setbeamerfont{block body example}{size=\small}
+
+\newcommand{\nt}[1]{\ensuremath{\mathord{\mathit{#1}}}}
+
+\newcommand{\selectcodefontsize}{}
+\newcommand{\basecode}[1]{%
+  \begingroup%
+  \sethlcolor{light gray}%
+  \color{dark gray}%
+  \texttt{\selectcodefontsize\hl{#1}}%
+  \endgroup%
+}
+\newcommand{\code}[1]{\ifmmode\mathord{\basecode{#1}}\else\basecode{#1}\fi}
+
 \setbeamerfont{title}{size=\Large}
-
-
-% Custom colors (see beamercolorthemecustom.sty for more details)
-%\usecolortheme{custom}
-
-% Custom footline
-%% \useoutertheme[subsection=false]{miniframes}
-%% \makeatletter
-%% % helper
-%% \newcommand\letbeamertemplate[2]{%
-%%   \csletcs{beamer@@tmpl@#1}{beamer@@tmpl@#2}%
-%% }
-
-%% % Currently template `headline` is `miniframes theme`.
-%% % First, copy `headline` to `footline`.
-%% \letbeamertemplate{footline}{headline}
-%% % Then, reset `headline`
-%% \setbeamertemplate{headline}[KTH-full]
-%% \makeatother
 
 \setbeamertemplate{page number in head/foot}[totalframenumber]
 
@@ -51,10 +146,10 @@ Scale=.9,
   \end{beamercolorbox}%
   \begin{beamercolorbox}{section in head/foot}%
     \vskip2pt%
-    \begin{minipage}[c]{.8\paperwidth}%
+    \begin{minipage}[c]{.9\paperwidth}%
       \insertnavigation{\linewidth}%
     \end{minipage}%%
-    \begin{minipage}[c]{.2\paperwidth}%
+    \begin{minipage}[c]{.1\paperwidth}%
       \hfill\usebeamercolor[fg]{page number in head/foot}\usebeamertemplate{page number in head/foot}\quad\mbox{}%
     \end{minipage}%%
     \vskip4pt % <- change here%
@@ -66,29 +161,1308 @@ Scale=.9,
 
 \def\insertframetitle{}
 
+
 \begin{document}
 
 \inserttitlepage
 
 \section{Introduction}
 
+\begin{frame}{Introduction}
+  \begin{itemize}
+    \item Programming languages (PLs) help productivity\hfill{}\code{Asm -> Java}\pause
+    \item \ldots but are hard to make\hfill{}\code{rustc $\sim$500\,000$^*$ loc}\pause
+    \item Applicability vs. implementation-effort\hfill{}\code{general purpose}\pause
+    \item \emph{Domain-specific} languages (DSLs)\hfill{}\code{SQL, Stan, YACC}\pause
+    \item Less generally applicable, still difficult to make\hfill{}\code{:(}\pause
+  \end{itemize}
+
+  \vfill
+
+  \begin{center}
+    Need more efficient implementation methods for DSLs\pause
+
+    \ldots which also helps general purpose languages
+  \end{center}
+\end{frame}
+
+\begin{frame}{Improving PL Implementation Through Better Abstractions}
+  Reasoning and programming by abstraction \hfill \code{hide/omit details}\pause
+
+  \vfill
+
+  Important questions:\pause
+  \begin{enumerate}
+  \item Is the abstraction beneficial? \hfill \code{important details}\pause
+  \item Is the abstraction correct? \hfill \code{leakage}\pause
+  \item Is the abstraction efficient? \hfill \code{performance}\pause
+  \end{enumerate}
+
+  \vfill
+
+  Three areas:\pause
+  \begin{enumerate}
+  \item Implementing DSLs and Programming Languages\pause
+  \item Syntactic Ambiguity in Programming Languages\pause
+  \item High-Level Data Structures
+  \end{enumerate}
+\end{frame}
+
+\section{Research Areas}
+
 \insertsectionpage
 
-\begin{frame}{Frame title}
-\begin{block}{Block}
-\end{block}
+\subsection{R1: Implementing DSLs and Programming Languages}
+
+\begin{frame}{Traditional Compiler Architecture}
+  \centering
+  \begin{tikzpicture}[node distance=0.5cm,font=\small]
+    \coordinate (left1) at (0,0);
+    \coordinate[right=of left1] (left2);
+    \node[draw, rounded rectangle, right=of left2] (parse) {Parsing};
+    \node[draw, rounded rectangle, right=of parse] (binding) {Binding Analysis};
+    \node[draw, rounded rectangle, right=of binding] (types) {Type Checking};
+    \coordinate[right=of types] (right1);
+    \coordinate[right=of right1] (right2);
+    \draw
+      (left1) edge[densely dashed] (left2)
+      (left2) edge[->] (parse)
+      (parse) edge[->] (binding)
+      (binding) edge[->] (types)
+      (types) edge[->] (right1)
+      (right1) edge[densely dashed] (right2)
+    ;
+
+    \node<2->[below=1.5cm of binding] (let) {\code{let}};
+    \draw<2>
+      (let.north) edge[out=90, in=270,->] (parse.south)
+      (let.north) edge[out=90, in=270,->] (binding.south)
+      (let.north) edge[out=90, in=270,->] (types.south)
+    ;
+    \draw<3->
+      (let.north) edge[->] (parse.south)
+      (let.north) edge[->] (binding.south)
+      (let.north) edge[->] (types.south)
+    ;
+
+    \node<3->[left=of let] (add) {\code{+}};
+    \draw<3->
+      (add.north) edge[->] (parse.south)
+      (add.north) edge[->] (binding.south)
+      (add.north) edge[->] (types.south)
+    ;
+    \node<3->[right=of let] (func) {\code{fn}};
+    \draw<3->
+      (func.north) edge[->] (parse.south)
+      (func.north) edge[->] (binding.south)
+      (func.north) edge[->] (types.south)
+    ;
+    \node<4->[left=of add] (var) {\code{var}};
+    \draw<4->
+      (var.north) edge[->] (parse.south)
+      (var.north) edge[->] (binding.south)
+      (var.north) edge[->] (types.south)
+    ;
+    \node<4->[right=of func] (class) {\code{class}};
+    \draw<4->
+      (class.north) edge[->] (parse.south)
+      (class.north) edge[->] (binding.south)
+      (class.north) edge[->] (types.south)
+    ;
+
+    \node<5->[fit=(var)(add)(let), draw, rounded rectangle] (area) {};
+    \node<5->[below=of area] (question) {Reuse?};
+    \draw<5->
+      (question) edge[] (area)
+    ;
+  \end{tikzpicture}
 \end{frame}
-\begin{frame}{Frame title}
-\begin{block}{Block}
-\end{block}
+
+\begin{frame}{Categorizing Approaches}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \textbf{From Scratch}\hfill\tikzmark{from-scratch-top}
+    \begin{itemize}
+    \item Maximally flexible
+    \item Extensive effort
+    \item Large unit of composition
+    \end{itemize}
+
+    \onslide<2->\textbf{Embedded}\hfill\tikzmark{embedded-top}
+    \begin{itemize}
+    \item Little work (relatively)
+    \item Pre-existing libraries
+    \item Syntactically inflexible
+    \item Leaky abstraction
+    \end{itemize}
+
+    \column{0.5\textwidth}
+    \onslide<3->
+    \tikzmark{macros-top}\textbf{Macros}
+    \begin{itemize}
+    \item Small unit of composition
+    \item Syntactically inflexible*
+    \item Leaky abstraction*
+    \end{itemize}
+
+    \onslide<4->\tikzmark{frameworks-top}\textbf{Language Frameworks}
+    \begin{itemize}
+    \item Little work (relatively)
+    \item Large unit of composition
+    \end{itemize}
+  \end{columns}
+
+
+  \onslide<1->
+  \begin{tikzpicture}[remember picture,overlay]
+    \tikzset{floating box/.style={color=navy,fill=sand,drop shadow={},font=\footnotesize}}
+
+    \coordinate (from-scratch-top) at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:from-scratch-top);
+    \coordinate (embedded-top)     at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:embedded-top);
+    \coordinate (macros-top)       at ([yshift=\ht\charbox,xshift=1cm]pic cs:macros-top);
+    \coordinate (frameworks-top)   at ([yshift=\ht\charbox,xshift=1cm]pic cs:frameworks-top);
+
+    \node<1>[floating box,anchor=north] at (embedded-top -| current page.center) {
+      \begin{tabular}{ll}
+        Compilers: principles, techniques, and tools & \cite{ahoCompilersPrinciplesTechniques2006} \\
+      \end{tabular}
+    };
+    \node<2>[floating box,anchor=south,yshift=0.5\ht\charbox] at (embedded-top -| current page.center) {
+      \begin{tabular}{ll}
+        Building domain-specific embedded languages & \cite{hudakBuildingDomainspecificEmbedded1996} \\
+        Paradise: a two-stage DSL embedded in Haskell & \cite{augustssonParadiseTwostageDSL2008} \\
+        Lava: hardware design in Haskell & \cite{bjesseLavaHardwareDesign1998} \\
+        Functional reactive programming from first principles & \cite{wanFunctionalReactiveProgramming2000} \\
+      \end{tabular}
+    };
+
+    \node<3>[floating box,anchor=north] at (frameworks-top -| current page.center) {
+      \begin{tabular}{ll}
+        An overview of common Lisp & \cite{steeleOverviewCOMMONLISP1982} \\
+        Lisp and symbolic computation & \cite{dybvigSyntacticAbstractionScheme1993} \\
+        Macros that work together: [\ldots] & \cite{flattMacrosThatWork2012} \\
+        A theory of typed hygienic macros & \cite{hermanTheoryTypedHygienic2010} \\
+        Rhombus: [\ldots] & \cite{flattRhombusNewSpin2023} \\
+      \end{tabular}
+    };
+
+    \node<4>[floating box,anchor=south,yshift=0.5\ht\charbox] at (frameworks-top -| current page.center) {
+      \begin{tabular}{ll}
+        Silver: an extensible attribute grammar system & \cite{vanwykSilverExtensibleAttribute2010} \\
+        The JastAdd system --- [\ldots] & \cite{ekmanJastAddSystemModular2007} \\
+        Sound type-dependent syntactic language extension & \cite{lorenzenSoundTypedependentSyntactic2016} \\
+        A vision of Miking: [\ldots] & \cite{bromanVisionMikingInteractive2019} \\
+      \end{tabular}
+    };
+  \end{tikzpicture}
+  \onslide<5>
+\end{frame}
+
+\begin{frame}{Research Question}
+  \vfill
+  \begin{center}
+    \textbf{R1:} How can we reuse implementation work on individual
+    language features across languages?
+  \end{center}
+\end{frame}
+
+\subsection{R2: Ambiguity in Programming Languages}
+
+\makeatletter\let\frametextheight\beamer@frametextheight\makeatother
+
+\begin{frame}[fragile]{Ambiguity in Programming Languages}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \centering
+      Context-free grammar
+
+      \vspace{2em}
+      \begin{tabular}[c]{r@{ }c@{ }l}
+        \nt{E} & $\rightarrow$ & $\code{<int>}$ \\
+        \nt{E} & $\rightarrow$ & $\code{(} \nt{E} \code{)}$ \\
+        \nt{E} & $\rightarrow$ & $\nt{E} \mathbin{\nt{Op}} \nt{E}$ \\
+        \addlinespace
+        \nt{Op} & $\rightarrow$ & $\code{+} \mid \code{*}$ \\
+      \end{tabular}
+
+      \vspace{2em}
+      \begin{overprint}
+        \onslide<1>\centering\code{(3 * 5) + 1}
+        \onslide<2->\centering\code{3 * 5 + 1}
+      \end{overprint}
+
+      \vspace{2em}
+      \onslide<3->{Ambiguity undecidable~\citep{cantorAmbiguityProblemBackus1962}}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+      \begin{overprint}[\linewidth]
+        \onslide<1>
+      \centering
+        \begin{tikzpicture}[baseline=(current bounding box.center)]
+          \tikzset{level 1+/.style={level distance=3\ht\charbox}}
+          \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.south) -- +(0,-2pt) -| (\tikzchildnode)}}}
+          \tikzset{frontier/.style={distance from root=12\ht\charbox}}
+          \Tree [.{$\nt{E}_3$}
+            [.{$\nt{E}_2$}
+              \code{(}
+                   [.{$\nt{E}_3$}
+                     [.{$\nt{E}_1$} \code{3} ]
+                     [.{$\nt{Op}_2$} \code{*} ]
+                     [.{$\nt{E}_1$} \code{5} ]
+                   ]
+                   \code{)}
+            ]
+            [.{$\nt{Op}_1$} \code{+} ]
+            [.{$\nt{E}_1$} \code{1} ]
+          ]
+        \end{tikzpicture}
+        \onslide<2->
+      \centering
+        \begin{tikzpicture}[baseline=(current bounding box.center)]
+          \tikzset{level 1+/.style={level distance=3\ht\charbox}}
+          \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.south) -- +(0,-2pt) -| (\tikzchildnode)}}}
+          \begin{scope}[frontier/.style={distance from root=9\ht\charbox}]
+            \Tree [.{$\nt{E}_3$}
+              [.{$\nt{E}_3$}
+                [.\node(fst){$\nt{E}_1$}; \code{3} ]
+                [.\node(snd){$\nt{Op}_2$}; \code{*} ]
+                [.{$\nt{E}_1$} \code{5} ]
+              ]
+              [.{$\nt{Op}_1$} \code{+} ]
+              [.{$\nt{E}_1$} \code{1} ]
+            ]
+          \end{scope}
+          \begin{scope}[frontier/.style={distance from root=9\ht\charbox},grow'=up,shift={($(fst)-(snd)-(0,18\ht\charbox)$)}]
+            \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.north) -- +(0,2pt) -| (\tikzchildnode)}}}
+            \Tree [.{$\nt{E}_3$}
+              [.{$\nt{E}_1$} \code{3} ]
+              [.{$\nt{Op}_2$} \code{*} ]
+              [.{$\nt{E}_3$}
+                [.{$\nt{E}_1$} \code{5} ]
+                [.{$\nt{Op}_1$} \code{+} ]
+                [.{$\nt{E}_1$} \code{1} ]
+              ]
+            ]
+          \end{scope}
+        \end{tikzpicture}
+      \end{overprint}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{(Avoiding) Ambiguity in Programming Languages}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \textbf{Fully unambiguous Formalisms}
+    \begin{itemize}
+    \item Often parser-based
+    \item Limit expressivity
+    \item Outlaw ambiguity completely
+    \end{itemize}
+
+    \onslide<2->\textbf{Formalisms with decidable ambiguity}\hfill\tikzmark{amb-left-top}
+    \begin{itemize}
+    \item Limit expressivity
+    \item Ambiguity allowed and decidable
+    \end{itemize}
+
+    \column{0.5\textwidth}
+    \onslide<3->
+    \textbf{Incomplete ambiguity detection}
+    \begin{itemize}
+    \item Heuristics
+    \item Conservative approaches
+    \end{itemize}
+
+    \onslide<4->\tikzmark{amb-right-top}\textbf{General parsing algorithms}
+    \begin{itemize}
+    \item Parse \emph{all} context-free grammars
+    \item Produce \emph{parse forests}
+    \end{itemize}
+  \end{columns}
+
+
+  \onslide<1->
+  \begin{tikzpicture}[remember picture,overlay]
+    \tikzset{floating box/.style={color=navy,fill=sand,drop shadow={},font=\footnotesize}}
+
+    \coordinate (amb-left-top)  at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:amb-left-top);
+    \coordinate (amb-right-top) at ([yshift=\ht\charbox,xshift=1cm]pic cs:amb-right-top);
+
+    \node<1>[floating box,anchor=north] at (amb-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Syntax-direction transduction & \cite{lewisSyntaxDirectedTransduction1968} \\
+        On the translation of languages from left to right & \cite{knuthTranslationLanguagesLeft1965} \\
+        Parsing expression grammars & \cite{fordParsingExpressionGrammars2004} \\
+        Deterministic parsing of ambiguous grammars & \cite{ahoDeterministicParsingAmbiguous1973} \\
+        Syntactic analysis and operator precedence & \cite{floydSyntacticAnalysisOperator1963} \\
+      \end{tabular}
+    };
+    \node<2>[floating box,anchor=south,yshift=0.5\ht\charbox] at (amb-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Regular languages & \\
+        Visibly pushdown languages & \cite{alurVisiblyPushdownLanguages2004} \\
+      \end{tabular}
+    };
+
+    \node<3>[floating box,anchor=north] at (amb-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Analyzing context-free grammars using an incremental SAT solver & \cite{axelssonAnalyzingContextFreeGrammars2008} \\
+        Analyzing ambiguity of context-free grammars & \cite{brabrandAnalyzingAmbiguityContextFree2007} \\
+        Convervative ambiguity detection in context-free grammars & \cite{schmitzConservativeAmbiguityDetection2007} \\
+        Tracking down the origins of ambiguity in context-free grammars & \cite{bastenTrackingOriginsAmbiguity2010} \\
+      \end{tabular}
+    };
+
+    \node<4>[floating box,anchor=south,yshift=0.5\ht\charbox] at (amb-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Syntax in universal translation & \cite{sakaiSyntaxUniversalTranslation1961} \\
+        Efficient context-free parsing & \cite{earleyEfficientContextfreeParsing1970} \\
+        Deterministic techniques for efficient non-deterministic parsers & \cite{langDeterministicTechniquesEfficient1974} \\
+        GLL parsing & \cite{scottGLLParsing2010} \\
+        Using filters for the disambiguation of context-free grammars & \cite{klintUsingFiltersDisambiguation1994} \\
+      \end{tabular}
+    };
+  \end{tikzpicture}
+  \onslide<5>
+\end{frame}
+
+\begin{frame}[fragile]{Ambiguity in Programming Languages}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+        \centering
+        Context-free grammar
+
+        \null\vfill\null
+        \begin{tabular}[c]{r@{ }c@{ }l}
+          \nt{E} & $\rightarrow$ & $\code{<int>}$ \\
+          \nt{E} & $\rightarrow$ & $\code{(} \nt{E} \code{)}$ \\
+          \nt{E} & $\rightarrow$ & $\nt{E} \mathbin{\nt{Op}} \nt{E}$ \\
+          \addlinespace
+          \nt{Op} & $\rightarrow$ & $\code{+} \mid \code{*}$ \\
+        \end{tabular}
+
+      \null\vfill\null
+      \centering\code{3 * 5 + 1}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+      \centering
+        \begin{tikzpicture}[baseline=(current bounding box.center)]
+          \tikzset{level 1+/.style={level distance=3\ht\charbox}}
+          \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.south) -- +(0,-2pt) -| (\tikzchildnode)}}}
+          \begin{scope}[frontier/.style={distance from root=9\ht\charbox}]
+            \Tree [.{$\nt{E}_3$}
+              [.{$\nt{E}_3$}
+                [.\node(fst){$\nt{E}_1$}; \code{3} ]
+                [.\node(snd){$\nt{Op}_2$}; \code{*} ]
+                [.{$\nt{E}_1$} \code{5} ]
+              ]
+              [.{$\nt{Op}_1$} \code{+} ]
+              [.{$\nt{E}_1$} \code{1} ]
+            ]
+          \end{scope}
+          \begin{scope}[frontier/.style={distance from root=9\ht\charbox},grow'=up,shift={($(fst)-(snd)-(0,18\ht\charbox)$)}]
+            \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.north) -- +(0,2pt) -| (\tikzchildnode)}}}
+            \Tree [.{$\nt{E}_3$}
+              [.{$\nt{E}_1$} \code{3} ]
+              [.{$\nt{Op}_2$} \code{*} ]
+              [.{$\nt{E}_3$}
+                [.{$\nt{E}_1$} \code{5} ]
+                [.{$\nt{Op}_1$} \code{+} ]
+                [.{$\nt{E}_1$} \code{1} ]
+              ]
+            ]
+          \end{scope}
+        \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Is Ambiguity Always Bad?}
+  \begin{center}
+    \code{3 * 5 + 1}\quad means\quad \code{(3 * 5) + 1}\quad or\quad \code{3 * (5 + 1)}
+  \end{center}\pause
+
+  \begin{itemize}
+  \item New syntax, no well-known convention \hfill \code{!?}\pause
+  \item Intuitive grammars, typically easier to understand \hfill \code{dangling else}\pause
+  \item Composition, no designer that can make an informed decision \hfill \code{A + B}\pause
+  \end{itemize}
+
+  \vfill
+  \begin{center}
+    \textbf{R2:} How can we incorporate and handle partial
+    syntactic ambiguity in programming languages?
+  \end{center}
+\end{frame}
+
+\subsection{R2: High-Level Data Structures}
+
+\begin{frame}{Data Structures in Programming}
+  \begin{itemize}
+  \item Many choices \hfill \code{LinkedList, FingerTree, Array, Rope, $\ldots$}\pause
+  \item Choices matter \hfill \code{O(1) vs O(log n) vs O(n) vs $\ldots$}\pause
+  \item No universally optimal choice \hfill \code{Workload dependent}\pause
+  \item Volatile \hfill \code{Program edits}\pause
+  \item Non-atomic \hfill \code{start $\rightarrow$ end}\pause
+  \end{itemize}
+
+  \vfill
+  \begin{center}
+    Can the compiler do this for us?
+  \end{center}
+\end{frame}
+
+\begin{frame}{Automatic Data Structure Selection}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \textbf{Dynamic (online) decisions}
+    \begin{itemize}
+    \item Adapts to actual workload
+    \item Overhead, limitations on analysis
+    \item Typically supports representation switching
+    \end{itemize}
+
+    \onslide<2->\textbf{Static (offline) decisions}\hfill\tikzmark{data-left-top}
+    \begin{itemize}
+    \item Static analysis/benchmarking
+    \item Typically does not support representation switching
+    \end{itemize}
+
+    \column{0.5\textwidth}
+    \onslide<3->
+    \textbf{Four axes of extensibility}
+    \begin{itemize}
+    \item Abstract types
+    \item Representations
+    \item Operations
+    \item Operation implementations
+    \end{itemize}
+
+    \onslide<4->\tikzmark{data-right-top}\textbf{Flexibility}
+    \begin{itemize}
+    \item Fully semantically equivalent
+    \end{itemize}
+    vs.
+    \begin{itemize}
+    \item Observably equivalent
+    \end{itemize}
+  \end{columns}
+
+
+  \onslide<1->
+  \begin{tikzpicture}[remember picture,overlay]
+    \tikzset{floating box/.style={color=navy,fill=sand,drop shadow={},font=\footnotesize}}
+
+    \coordinate (data-left-top)  at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:data-left-top);
+    \coordinate (data-right-top) at ([yshift=\ht\charbox,xshift=1cm]pic cs:data-right-top);
+
+    \node<1>[floating box,anchor=north] at (data-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        Safe and flexible adaptation via alternate data structure representations & \cite{kusumSafeFlexibleAdaptation2016} \\
+        Dynamically transforming data structures & \cite{osterlundDynamicallyTransformingData2013} \\
+        CoCo: sound and adaptive replacement of Java collections & \cite{xuCoCoSoundAdaptive2013} \\
+      \end{tabular}
+    };
+    \node<2>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
+        Automatic coding: choice of data structures & \cite{lowAutomaticCodingChoice1976} \\
+        Fine-tuning data structures for query processing & \cite{shaikhhaFineTuningDataStructures2023} \\
+        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
+      \end{tabular}
+    };
+
+    \node<3>[floating box,anchor=north] at (data-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+        Automating relational operations on data structures & \cite{cohenAutomatingRelationalOperations1993} \\
+        Chameleon: adaptive selection of collections & \cite{shachamChameleonAdaptiveSelection2009} \\
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        An automatic technique for selection of data representations in SETL programs & \cite{schonbergAutomaticTechniqueSelection1981} \\
+      \end{tabular}
+    };
+
+    \node<4>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
+        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+      \end{tabular}
+    };
+  \end{tikzpicture}
+  \onslide<5>
+\end{frame}
+
+\begin{frame}{Research Question}
+  \vfill
+  \begin{center}
+    \textbf{R3:} How can we automatically select efficient
+    representations in an extensible manner while still allowing
+    representation switching, semantically-aware selection, and low
+    compilation time and run-time overhead?
+  \end{center}
 \end{frame}
 
 \section{Papers}
-\section[Implementing Languages]{Implementing DSLs and Programming Languages}
-\section[Ambiguity]{Syntactic Ambiguity in Programming Languages}
-\section[Data Structures]{High-Level Data Structures}
+
+\begin{frame}{Main Papers}
+  \vspace{-7mm}
+  \begin{exampleblock}{Creating Domain-Specific Languages by Composing Syntactical
+      Constructs}
+    \textbf{Viktor Palmkvist} and David Broman.
+
+    Practical Aspects of Declarative Languages 2019. Lecture Notes in
+    Computer Science, volume 11372.
+  \end{exampleblock}
+
+  \begin{exampleblock}{Resolvable Ambiguity: Principled Resolution of Syntactically
+      Ambiguous Programs}
+    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, and David
+    Broman
+
+    Proceedings of the 30th ACM SIGPLAN International Conference on
+    Compiler Construction (CC 2021)%
+  \end{exampleblock}
+
+  \begin{exampleblock}{Statically Resolvable Ambiguity}
+    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, David
+    Broman
+
+    Proceedings of the ACM on Programming Languages, Volume 7, Issue
+    POPL (2023)
+  \end{exampleblock}
+
+  \begin{block}{Repr Types: One Abstraction to Rule Them All}
+    \textbf{Viktor Palmkvist}, Anders Ågren Thuné, Elias Castegren,
+    and David Broman
+
+    Submitted, preprint available~\citep{palmkvistReprTypesOne2024}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Other Papers}
+  \vspace{-7mm}
+  \begin{exampleblock}{Partial Evaluation of Forward-Mode Automatic Differentiation}
+    Oscar Eriksson, \textbf{Viktor Palmkvist}, and David Broman.
+
+    Proceedings of the 22nd ACM SIGPLAN International Conference on
+    Generative Programming: Concepts and Experiences (GPCE 2023)
+  \end{exampleblock}
+
+  \begin{block}{Trellis: A Domain-Specific Language for Hidden Markov Models with
+      Sparse Transitions}
+    Lars Hummelgren, \textbf{Viktor Palmkvist}, Linnea Stjerna,
+    Xuechun Xu, Joakim Jaldén, and David Broman
+
+    Accepted
+  \end{block}
+
+  \begin{block}{TreePPL: A Universal Probabilistic Programming Language for Phylogenetics}
+    Viktor Senderov, Jan Kudlicka, Daniel Lundén, \textbf{Viktor
+      Palmkvist}, Mariana P. Braga, David Broman, and Fredrik Ronquist
+
+    Preprint, bioRxiv~\citep{senderovTreePPLUniversalProbabilistic2023}
+  \end{block}
+\end{frame}
+
+\section{Contributions}
+\insertsectionpage
+
+\subsection{C1: Resolvable Ambiguity}
+
+\begin{frame}{\textbf{C1:} Resolvable Ambiguity \hfill \textbf{R2}, \textbf{P1}-\textbf{3}}
+  We introduce the concept and formal definition of \emph{resolvable
+  ambiguity}, a form of ambiguity that can be resolved explicitly by
+  rewriting the ambiguous program.\pause
+  \vfill
+  \begin{tblr}{width=\textwidth,colspec={@{}Xr@{}},rowspec={Q[m]},cells={fg=black}}
+    {Given language $L$, introduce $\mathit{parse}_L : \Sigma^* \rightarrow 2^T$\\ such that $L = \{w \mid \mathit{parse}_L(w) \neq \emptyset\}$} & ($\Sigma$ = alphabet, $T$ = trees, $w : \Sigma^*$) \\
+  \end{tblr} \pause
+  \vfill
+  \begin{tblr}{width=\textwidth,colspec={@{}Xr@{}},rowspec={Q[m]},cells={fg=black}}
+    \textbf{Definition:} $w$ \emph{ambiguous} if $\exists t_1, t_2 \in \mathit{parse}(w).\ t_1 \neq t_2$ & ($w : \Sigma^*$,\; $t_1, t_2 : T$) \\
+  \end{tblr} \pause
+  \vfill
+  \begin{tblr}{width=\textwidth,colspec={@{}Xr@{}},rowspec={Q[m]},cells={fg=black}}
+    \textbf{Definition:} $w$ \emph{resolvable} if $\forall t \in \mathit{parse}(w).\ \exists w'.\ \mathit{parse}(w') = \{t\}$ & ($w, w' : \Sigma^*$,\; $t : T$) \\
+  \end{tblr} \pause
+  \vfill
+  \begin{tblr}{width=\textwidth,colspec={@{}X[c]X[c]@{}},cells={fg=black}}
+    \SetCell[c=2]{c} Two Problems: & \\
+    \textbf{Dynamic} & \textbf{Static} \\
+    Is a given \emph{program} resolvable? & Is a given \emph{language} resolvable? \\
+  \end{tblr}
+\end{frame}
+
+\subsection{C2: Syncons}
+
+\begin{frame}[fragile]{\textbf{C2:} Syncons \hfill \textbf{R1}, \textbf{P1}}
+  Define self-contained language constructs that include:\\
+  1: Syntax \hfill 2: Binding semantics \hfill 3: Run-time semantics
+
+  \vfill
+  \begin{columns}
+    \column{0.5\textwidth}
+    \begin{lstlisting}[language=syncon,gobble=6,linewidth=\textwidth]
+      syntax local : Statement =
+        `\tikzmark{syntax}`"local" x:Identifier
+        ("=" e:Expr)?`\tikzmark{syntax-end}`
+      {
+        `\tikzmark{properties}`#bind x after
+        #scope (e)`\tikzmark{properties-end}`
+
+        `\tikzmark{body}`BExpr'
+          defAfter 'id(x) =
+          (@ref (@deref
+            't(foldl e _ (e)
+              (BExpr' @unit))))`\tikzmark{body-end}`
+      }                                `\tikzmark{right-edge}`
+    \end{lstlisting}
+
+    \onslide<2->
+
+    \begin{tikzpicture}[remember picture,overlay]
+      \coordinate (syntax) at ([shift={(-3pt,1.5ex)}]pic cs:syntax);
+      \coordinate (properties) at ([shift={(-3pt,1.5ex)}]pic cs:properties);
+      \coordinate (body) at ([shift={(-3pt,1.5ex)}]pic cs:body);
+
+      \coordinate (syntax-end) at ([yshift=-0.5ex]pic cs:syntax-end);
+      \coordinate (properties-end) at ([yshift=-0.5ex]pic cs:properties-end);
+      \coordinate (body-end) at ([yshift=-0.5ex]pic cs:body-end);
+
+      \coordinate (right-edge) at ([xshift=3pt]pic cs:right-edge);
+
+      \draw[rounded corners] (syntax) rectangle (syntax-end -| right-edge);
+      \node[anchor=north east,inner sep=3pt] at (syntax -| right-edge) {Syntax};
+
+      \onslide<3->{
+        \draw[rounded corners] (properties) rectangle (properties-end -| right-edge);
+        \node[anchor=north east,inner sep=3pt] at (properties -| right-edge) {Properties};
+      }
+
+      \onslide<4->{
+        \draw[rounded corners] (body) rectangle (body-end -| right-edge);
+        \node[anchor=north east,inner sep=3pt] at (body -| right-edge) {Body};
+      }
+    \end{tikzpicture}
+
+    \column{0.5\textwidth}
+    \begin{itemize}
+    \item<2-> Regular expression like syntax per \code{syncon},
+      context-free grammar in combination.
+    \item<3-> Properties for binding semantics, but also precedence etc.
+    \item<4-> Run-time semantics by translation to another language, also
+      defined with \code{syncons}, i.e., like a macro.
+    \end{itemize}
+  \end{columns}
+  \onslide<1->
+\end{frame}
+
+\begin{frame}{\textbf{C2:} Evaluation \hfill \textbf{R1}, \textbf{P1}}
+  \begin{itemize}
+  \item Implement subsets of OCaml and Lua \pause
+  \item Compose them, adding pattern matching to Lua \pause
+  \item Syntactic composition leads to ambiguity relatively easily,
+    but that might not be an issue
+  \end{itemize}
+\end{frame}
+
+\subsection{C3: Dynamic Resolvability via Finite Automata}
+
+\begin{frame}[fragile]{\textbf{C3:} Dynamic Resolvability via Finite Automata \hfill \textbf{R2}, \textbf{P2}}
+  Extend context-free grammars ($\mathit{parse}$) + solve the dynamic problem \pause
+  \vfill
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \centering
+    \begin{tabular}{c@{\ }c@{\ }lcc}
+      \multicolumn{3}{l}{Productions} & & Grouping \\
+      \cmidrule{1-3} \cmidrule{5-5}
+      $\nt{E}$ & $\xrightarrow{a\onslide<3-6>{\popupr{Label}}}$ & $\nt{E}_{\{b\}} \mathbin{\code{+}} \nt{E}_{\{b,a\}}$ & & $\code{(}\,\nt{E}\,\code{)}\onslide<4-6>{\popupr{No label}}$\\
+      $\nt{E}$ & $\xrightarrow{m}$ & $\nt{E}_{\{b,a\}} \mathbin{\code{*}} \nt{E}_{\{b,a,m\onslide<5-6>{\popupr{Exclusions}}\}}$ \\
+      $\nt{E}$ & $\xrightarrow{l}$ & $\code{[}\, (\nt{E}\,(\code{,}\, \nt{E})^* + \epsilon)\,\code{]}$ \\
+      $\nt{E}$ & $\xrightarrow{b}$ & $\code{let}\, \underline{\code{<Ident>}} \mathbin{\code{=}} \nt{E} \mathbin{\code{in}} \nt{E}$ \\
+      $\nt{E}$ & $\xrightarrow{v}$ & $\underline{\code{<Ident>}}$ \\
+      $\nt{E}$ & $\xrightarrow{n}$ & $\underline{\code{<Int>}\onslide<6>{\popupr{Important}}}$ \\
+    \end{tabular}
+
+    \column{0.5\textwidth}
+    \centering
+    \null\vfill\null
+    \onslide<7->{$\mathit{parse}($}\code{let x = 1 + 2 in x * 3}\onslide<7->{$) =$}
+
+    \null\vfill
+    \hphantom{$\mathit{pares}($}
+    \begin{tikzpicture}[baseline=(current bounding box.center)]
+      \tikzset{level 1+/.style={level distance=30pt}}
+      \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.south) -- +(0,-2pt) -| (\tikzchildnode)}}}
+      \tikzset{frontier/.style={distance from root=90pt}}
+      \Tree [.{$b$}
+        \code{x}
+             [.{$a$}
+               [.{$n$} \code{1} ]
+               [.{$n$} \code{2} ]
+             ]
+             [.{$m$}
+               [.{$v$} \code{x} ]
+               [.{$n$} \code{3} ]
+             ]
+      ]
+    \end{tikzpicture}
+    \hphantom{$) =$}
+    \null\vfill\null
+  \end{columns}
+\end{frame}
+
+\begin{frame}{\textbf{C3:} Solving the Dynamic Problem \hfill \textbf{R2}, \textbf{P2}}
+  ``Invert'' $\mathit{parse} : \Sigma^* \rightarrow 2^T$ to get $\mathit{words} : T \rightarrow 2^{\Sigma^*}$ \pause
+
+  \vfill
+  \begin{tblr}{width=\textwidth,colspec={@{}Xr@{}},rowspec={Q[m]},cells={fg=black}}
+    $\mathit{words}(t) = \{w \mid t \in \mathit{parse}(w)\}$ & ($t : T$,\; $w : \Sigma^*$) \\
+  \end{tblr} \pause
+
+  \vfill
+  Our grammars are designed such that $\mathit{words}(t)$ is \emph{visibly pushdown} forall $t$! \pause
+
+  \vfill
+  Computable union and set-difference
+
+\end{frame}
+
+\begin{frame}{\textbf{C3:} Solving the Dynamic Problem \hfill \textbf{R2}, \textbf{P2}}
+  \centering
+  \begin{tikzpicture}[node distance=0.1cm and 1.7cm]
+    \tikzset{level 1+/.style={level distance=30pt}}
+    \tikzset{edge from parent/.style={draw,edge from parent path={(\tikzparentnode.south) -- +(0,-2pt) -| (\tikzchildnode)}}}
+    \tikzset{frontier/.style={distance from root=60pt}}
+
+    \node[] (a1) {$\code{1 + 2 * 3}$};
+    \onslide<3->{
+      \node[below=of a1] (a2) {$\code{1 + (2) * 3}$};
+      \node[below=of a2] (a3) {$\ldots$};
+
+      \node[right=of a1,yshift=-4mm] (r1) {$\code{((1 + 2)) * 3}$};
+      \node[below=of r1] (r2) {$\code{(1 + 2) * (3)}$};
+      \node[below=of r2,xshift=-7mm] (r3) {$\ldots$};
+      \node[above=of r1,xshift=-7mm] (r4) {$\code{(1 + 2) * 3}$};
+
+      \node[left=of a1,yshift=-4mm] (l1) {$\code{1 + ((2 * 3))}$};
+      \node[below=of l1] (l2) {$\code{(1) + (2 * 3)}$};
+      \node[below=of l2,xshift=7mm] (l3) {$\ldots$};
+      \node[above=of l1,xshift=7mm] (l4) {$\code{1 + (2 * 3)}$};
+
+      \node[ellipse,draw,fit=(l1)(l2)(l3)(l4)(a1)(a2),inner sep=-3mm,xshift=-4mm] (t1set) {};
+      \node[ellipse,draw,fit=(r1)(r2)(r3)(r4)(a1)(a2),inner sep=-3mm,xshift=4mm] (t2set) {};
+    }
+
+    \onslide<2->{
+      \node[above=0cm of t1set,xshift=-10mm] (t1) {
+        \Tree [.{$a$}
+          \code{1}
+               [.{$m$}
+                 \code{2}
+                 \code{3}
+               ]
+        ]
+      };
+      \node[above=0cm of t2set,xshift=10mm] (t2) {
+        \Tree [.{$m$}
+          [.{$a$}
+            \code{1}
+            \code{2}
+          ]
+          \code{3}
+        ]
+      };
+    }
+    \onslide<3->{
+      \node[left= -3mm of t1] {$\mathit{words}($};
+      \node[right=-3mm of t1] {$)$};
+      \node[left= -3mm of t2] {$\mathit{words}($};
+      \node[right=-3mm of t2] {$)$};
+    }
+  \end{tikzpicture}
+\end{frame}
+
+\subsection{C4: Property-Based Testing for Static Resolvability}
+
+\begin{frame}{\textbf{C4:} Approximating the Static Problem with Property-Based Testing \hfill \textbf{R2}, \textbf{P2}}
+  ``Lift'' the dynamic check by testing many random programs \pause
+
+  \vfill
+  \begin{center}
+    \includegraphics[scale=1.1]{figures/language-designer-workflow.pdf}
+  \end{center} \pause
+
+  \vfill
+  \begin{center}
+    \input{figures/dyn-cumulative-frequency.pgf} \pause
+    \input{figures/classifications.pgf} \pause
+    \input{figures/pbt-cumulative-frequency.pgf}
+  \end{center}
+\end{frame}
+
+\subsection{C5: Embedding, Operator Sequences, and the Grouper}
+
+\begin{frame}{\textbf{C5:} Embeddable Resolvable Ambiguity \hfill \textbf{R2}, \textbf{P3}}
+  Problem: C4 only \emph{approximates} a solution to the static resolvability problem \pause
+
+  \vfill
+  Solution: make a simpler syntax formalism \pause \\
+  \ldots that is still syntactically expressive \pause \\
+  \ldots and can still express and resolve the ambiguities we care about \pause
+
+  \vfill
+  Core idea: \emph{implicit} vs. \emph{explicit} grouping \pause
+
+  \vfill
+  \centering
+  \begin{tabular}{r@{\ =\ }l}
+    \code{1 + 2 * 3} & \code{(1 + (2 * 3))} \\ \pause
+    \code{if a then if b then c else d} & \code{if a then (if b then c else d)} \\
+  \end{tabular} \pause
+
+  \vfill
+  \raggedright
+  Regain expressivity through embedding
+\end{frame}
+
+\begin{frame}{\textbf{C5:} Embeddable Resolvable Ambiguity \hfill \textbf{R2}, \textbf{P3}}
+  \centering
+  \includegraphics[scale=1.1]{figures/Approach_Overview.pdf} \pause
+
+  \vfill
+  \raggedright
+  Conventional parser, new \emph{grouper} \pause
+
+  \vfill
+  Operator sequence(s)
+
+  \vfill
+  \centering
+  \begin{tikzpicture}[node distance=5pt]
+    \tikzset{code/.style={inner sep=3pt,outer sep=auto}}
+    \tikzset{item marker/.style={circle,inner sep=2pt,draw,fill=black}}
+    \node[code] (if) {\code{if}};
+    \node[code,right=of if] (a) {\code{a}};
+    \node[code,right=of a] (or) {\code{||}};
+    \node[code,right=of or] (b) {\code{b}};
+    \node[code,right=of b] (then) {\code{then}};
+    \node[code,right=of then] (x) {\code{x}};
+    \node[code,right=of x] (else) {\code{else}};
+    \node[code,right=of else] (y) {\code{y}};
+
+    \begin{scope}[on background layer={color = light gray}]
+      \node[fit=(if) (y),fill,inner sep=0pt] {};
+    \end{scope}
+
+    \coordinate[above=of if] (above);
+    \coordinate[below=of if] (below);
+
+    \onslide<4->{
+    \node[item marker] (item1) at ({$(if.west)!0.5!(then.east)$} |- above) {};
+    \draw
+      (if.west) |- (item1)
+      (then.east) |- (item1)
+    ;
+    \node[item marker] (item2) at ({$(x.west)!0.5!(x.east)$} |- above) {};
+    \draw
+      (x.west) |- (item2)
+      (x.east) |- (item2)
+    ;
+    \node[item marker] (item3) at ({$(else.west)!0.5!(else.east)$} |- above) {};
+    \draw
+      (else.west) |- (item3)
+      (else.east) |- (item3)
+    ;
+    \node[item marker] (item4) at ({$(y.west)!0.5!(y.east)$} |- above) {};
+    \draw
+      (y.west) |- (item4)
+      (y.east) |- (item4)
+    ;
+    }
+    \onslide<5->{
+    \node[item marker] (item5) at ({$(a.west)!0.5!(a.east)$} |- below) {};
+    \draw
+      (a.west) |- (item5)
+      (a.east) |- (item5)
+    ;
+    \node[item marker] (item6) at ({$(or.west)!0.5!(or.east)$} |- below) {};
+    \draw
+      (or.west) |- (item6)
+      (or.east) |- (item6)
+    ;
+    \node[item marker] (item7) at ({$(b.west)!0.5!(b.east)$} |- below) {};
+    \draw
+      (b.west) |- (item7)
+      (b.east) |- (item7)
+    ;
+    }
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{\textbf{C5:} Evaluating Performance and Expressivity \hfill \textbf{R2}, \textbf{P3}}
+  Modify \code{ocamlc} to use our approach for expressions \pause
+
+  \vfill
+  Parse $\sim$\num{1000000} files spread over \num{1533} packages in Opam \pause
+
+  \vfill
+  \centering
+  \resizebox{0.75\textwidth}{!}{\clipbox{0pt 0pt 0pt 30pt}{\input{figures/static-benchmarks.pgf}}}\hphantom{100000}
+\end{frame}
+
+\subsection{C6: A Mechanized Proof of Static Resolvability for C5}
+
+\begin{frame}{\textbf{C6:} Proving Static Resolvability \hfill \textbf{R2}, \textbf{P3}}
+  \textbf{C5} yields a resolvable language* \pause
+
+  \vfill
+  Mechanized proof in $\sim$\num{7000} lines of Coq \pause
+
+  \vfill
+  Core idea: show that adding all possible parentheses yields an unambiguous program
+\end{frame}
+
+\subsection{C7: repr Types and Compiler-selected Representations}
+
+\begin{frame}[fragile]{\textbf{C7:} \code{repr} Types and Compiler-selected Representations \hfill \textbf{R3}, \textbf{P4}}
+  Goals: extensibility, flexibility, and representation switching \pause
+
+  \vfill
+  Prototype extending OCaml
+  \pause
+
+  \vfill
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \textbf{Abstract Types}
+    \begin{lstlisting}[language=RepCaml,gobble=6]
+      type 'a seq_t
+      type 'a seq = ('a seq_t) repr
+    \end{lstlisting}
+    \onslide<5->
+    \vfill
+    \textbf{Abstract Operations}
+    \begin{lstlisting}[language=RepCaml,gobble=6]
+      letop prepend
+        : 'a -> 'a seq -> 'a seq
+
+      letop foldr
+        : ('a -> 'b -> 'b) -> 'b -> 'a seq
+        -> 'b
+      letop concat
+        : 'a seq -> 'a seq -> 'a seq
+    \end{lstlisting}
+    \onslide<2->
+    \column{0.5\textwidth}
+    \onslide<4->
+    \textbf{Concrete Representations}
+    \begin{lstlisting}[language=RepCaml,gobble=6]
+      letrepr cons_r {'a seq_t = 'a list}
+      letrepr str_r {char seq_t = string}
+    \end{lstlisting}
+    \onslide<6->
+    \vfill
+    \textbf{Concrete Implementations}
+    \begin{lstlisting}[language=RepCaml,gobble=6]
+      letimpl[1.0] prepend
+        : _ -> !cons_r -> !cons_r
+        = List.cons
+      letimpl[n] foldr
+        : _ -> _ -> !cons_r -> _
+        = List.foldr
+      `\tikzmark{concat-start}`letimpl[1.0] concat
+        = fun l r -> foldr (@n prepend) r l`\tikzmark{concat-end}`
+    \end{lstlisting}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{\textbf{C7:} \code{repr} Types and Compiler-selected Representations \hfill \textbf{R3}, \textbf{P4}}
+  Implementations can refer to operations \hfill \code{default implementations} \pause
+
+  \vfill
+  Two libraries \hfill \code{uct, graphs} \pause
+
+  \vfill
+  \centering
+  \sisetup{round-mode=places,round-precision=2}
+  \begin{tblr}{
+      colspec={l@{\qquad}S[table-format=1.2]S[table-format=1.2]S[table-format=1.2]S[table-format=1.2]@{\qquad} S[table-format=1.2] S[table-format=1.2]S[table-format=1.2]},
+      cell{1}{2}={c=4}{c},
+      cell{1}{6}={c=3}{c},
+      cells={fg=black},
+      row{1-2}={guard},
+    }
+     & Compilation time (s) &  &  &  & \tblronly{4-}{\SetColumn{bg=light blue}} Running time (s) & \tblronly{4-}{\SetColumn{bg=light blue}} & \tblronly{4-}{\SetColumn{bg=light blue}} \\
+    Program & \code{ocamlopt} & \code{mi-ml} & \code{mixed} & \code{transfer} & \code{ocamlopt} & \code{mi-ml} & \code{mixed} \\ \midrule
+    %% \input{figures/handwrittenTable.tex}
+    \code{show\_seq} & 0.11893570385185186 & 0.46765740470000006 & 1.0002836864 & 0.9133791154 & 9.1653023508 & 8.628994019399999 & 0.02645045510434783 \\
+    \code{prepend} & 0.11122990718518518 & 0.4852375096 & 5.296598548899999 & 0.9384299135999999 & 0.026694937016806725 & 0.027023933918918917 & 0.023711387221311477 \\
+    \code{append} & 0.10954015333333335 & 0.4548701694 & 5.340259603199999 & 0.9643638993 & 171.4106820776 & 164.69511481310002 & 0.022933267212121213 \\
+    \code{pattern} & 0.21083653207142858 & 0.6550604686 & 3.5666536212000004 & 1.8774878489000002 & 9.1270413927 & 8.807432507199998 & 0.13877640590476187 \\
+    \code{dijkstra} & 0.18934887786666668 & 0.6248261046000001 & 0.9956132031000002 & 0.9462301581000002 & 6.722684301400001 & 6.257983308999999 & 6.9067360158 \\
+    \code{celebrity} & 0.19792195993333334 & 0.5101833371 & 0.9051497183000002 & 1.0386059767 & 17.004707268599997 & 17.8571870824 & 11.118303377 \\
+  \end{tblr}
+\end{frame}
+
+\subsection{C8: A Strategy for Selecting Representations for C7}
+
+\begin{frame}[fragile]{\textbf{C8:} Selecting Representations for C7 \hfill \textbf{R3}, \textbf{P4}}
+  Step 1: find \code{repr} types that \emph{must} have the same representation \pause
+
+  \vfill
+  Core idea: piggyback on unification-based type inference \pause
+
+  \vfill
+  \begin{minipage}[b]{0.61\textwidth}
+    \begin{lstlisting}[language=RepCaml,gobble=6]
+      let join_with_sep
+        : char `\tikzmark{rep-1}`seq -> char `\tikzmark{rep-2}`seq `\tikzmark{rep-3}`seq -> char `\tikzmark{rep-4}`seq
+        = fun sep strings ->
+          let f acc str =
+            `\tikzmark{concat-1}`concat acc (`\tikzmark{concat-2}`concat sep str) in
+          match `\tikzmark{split-first}`split_first strings with
+          | Some (first, rest) ->
+            `\tikzmark{foldl}`foldl f first rest
+          | None () -> `\tikzmark{empty}`empty
+    \end{lstlisting}
+  \end{minipage}
+  \hfill
+  \begin{tikzpicture}[node distance=5pt]
+    \tikzset{repr/.style={circle,inner sep=1pt,draw}}
+    \tikzset{op/.style={inner sep=0}}
+    \tikzset{
+       invisible/.style={opacity=0,text opacity=0},
+       visible on/.style={alt={#1{}{invisible}}},
+       alt/.code args={<#1>#2#3}{%
+         \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+       },
+     }
+    \node[repr,visible on=<5->] (strings-r) {$r_4$};
+
+    \node[op,below=of strings-r,visible on=<4->] (split-first) {\popupcircle<4>{\ttfamily 3}\code{split\_first}};
+
+    \node[repr,below=of split-first,visible on=<5->] (split-first-r) {$r_5$};
+
+    \node[op,below=of split-first-r,visible on=<4->] (foldl) {\popupcircle<4>{\ttfamily 4}\code{foldl}};
+
+    \node[op,right=13pt of split-first,visible on=<4->] (concat-2) {\code{concat}\popupcircler<4>{\ttfamily 2}};
+
+    \node[repr,above=of concat-2,visible on=<5->] (sep-r) {$r_3$};
+    \node[repr,below=of concat-2,visible on=<5->] (concat-2-r) {$r_2$};
+
+    \node[op,below=of concat-2-r,visible on=<4->] (concat-1) {\code{concat}\popupcircler<4>{\ttfamily 1}};
+
+    \node[repr,visible on=<5->] at ($(split-first-r)!0.5!(concat-2-r)$) (str-r) {$r_1$};
+
+    \node[op,anchor=north,yshift=-10pt,visible on=<4->] (empty) at (str-r |- foldl.south) {\popupcircle<4>{\ttfamily 5}\code{empty}};
+
+    \draw<5->
+      (strings-r) edge[->] (split-first)
+      (split-first) edge[->] (split-first-r)
+      (split-first-r) edge[->] (foldl)
+
+      (foldl) edge[<->,densely dotted] (str-r)
+      (split-first) edge[<->,densely dotted] (str-r)
+
+      (sep-r) edge[->] (concat-2)
+      (concat-2) edge[->] (concat-2-r)
+      (concat-2-r) edge[->] (concat-1)
+
+      (str-r) edge[->] (concat-2)
+      (concat-1) edge[<->] (str-r)
+
+      (empty) edge[->] (str-r)
+    ;
+  \end{tikzpicture}
+  \begin{tikzpicture}[overlay,remember picture]
+    \tikzset{code-hl/.style={anchor=base west,fill=light blue,inner sep=2pt,font={\small\ttfamily}}}
+    \coordinate (concat-1) at (pic cs:concat-1);
+    \coordinate (concat-2) at (pic cs:concat-2);
+    \coordinate (split-first) at (pic cs:split-first);
+    \coordinate (foldl) at (pic cs:foldl);
+    \coordinate (empty) at (pic cs:empty);
+
+    \coordinate (rep-1) at (pic cs:rep-1);
+    \coordinate (rep-2) at (pic cs:rep-2);
+    \coordinate (rep-3) at (pic cs:rep-3);
+    \coordinate (rep-4) at (pic cs:rep-4);
+
+    \node<4->[code-hl] at (concat-1) {\popupcircle<4>{\ttfamily 1}concat};
+    \node<4->[code-hl] at (concat-2) {\popupcircle<4>{\ttfamily 2}concat};
+    \node<4->[code-hl] at (split-first) {\popupcircle<4>{\ttfamily 3}split\_first};
+    \node<4->[code-hl] at (foldl) {\popupcircle<4>{\ttfamily 4}foldl};
+    \node<4->[code-hl] at (empty) {\popupcircle<4>{\ttfamily 5}empty};
+
+    \node<5->[code-hl] at (rep-1) {\popupcircle<5>{$r_3$}seq};
+    \node<5->[code-hl] at (rep-2) {\popupcircle<5>{$r_1$}seq};
+    \node<5->[code-hl] at (rep-3) {\popupcircle<5>{$r_4$}seq};
+    \node<5->[code-hl] at (rep-4) {\popupcircle<5>{$r_1$}seq};
+  \end{tikzpicture}
+  \hfill\null
+\end{frame}
+
+\begin{frame}{\textbf{C8:} Selecting Representations for C7 \hfill \textbf{R3}, \textbf{P4}}
+  \begin{tikzpicture}[grow'=right]
+    \newcommand{\andsym}{ \raisebox{-1pt}{\nmark{$\forall$}}}
+    \newcommand{\orsym}{ \raisebox{-1pt}{\nmark{$\exists$}}}
+    \tikzset{and-node/.style={inner sep=1pt}}
+    \tikzset{or-node/.style={inner sep=1pt}}
+    \tikzset{dot/.style={inner sep=1pt,fill=black,circle}}
+    \tikzset{popout/.style={draw,drop shadow={},fill=white,inner sep=2pt,font=\tiny}}
+    \tikzset{sibling distance=0pt}
+    \tikzset{edge from parent/.style={draw, edge from parent path={(\tikzparentnode.east) -- +(2pt, 0) |- (\tikzchildnode.west)}}}
+    \tikzset{level 1/.style={level distance=7.5em}}
+    \tikzset{level 2/.style={level distance=6em}}
+    \tikzset{level 3/.style={level distance=5.5em}}
+    \tikzset{level 4/.style={level distance=5.7em}}
+    \tikzset{every tree node/.style={anchor=east}}
+    \Tree [.\node[and-node]{Program \code{0}\andsym};
+      [.\node[or-node]{\code{split\_first}\orsym};
+        [.\node[xshift=-2.5em]{\ldots}; ]
+      ]
+      [.\node[or-node]{\code{foldl}\orsym};
+        [.\node[xshift=-2.5em]{\ldots}; ]
+      ]
+      [.\node[or-node]{\code{concat}\orsym};
+        [.\node[and-node](default){Default \code{1}\andsym};
+          [.\node[or-node]{\code{foldr}\orsym};
+            [.\node[and-node](foldr-cons){\code{cons\_r} \code{n}\andsym}; ]
+            [.\node[and-node](foldr-rope){\code{rope\_r} \code{n}\andsym}; ]
+            [.\node[and-node](foldr-str){\code{str\_r} \code{n}\andsym}; ]
+          ]
+          \edge[edge from parent] node (prepend-dot) [pos=0.25,dot] {};
+               [.\node[or-node]{\code{prepend}\orsym};
+                 [.\node[and-node](prepend-cons){\code{cons\_r} \code{1}\andsym}; ]
+                 [.\node[and-node](prepend-rope){\code{rope\_r} \code{1}\andsym}; ]
+                 [.\node[and-node](prepend-str){\code{str\_r} \code{n}\andsym}; ]
+               ]
+        ]
+        [.\node[and-node](concat-rope){\code{rope\_r} \code{1}\andsym}; ]
+        [.\node[and-node](concat-str){\code{str\_r} \code{n}\andsym}; ]
+      ]
+      [.\node[or-node]{\code{concat}\orsym};
+        [.\node[xshift=-2.5em]{\ldots}; ]
+      ]
+      [.\node[or-node]{\code{empty}\orsym};
+        [.\node[xshift=-2.5em]{\ldots}; ]
+      ]
+    ]
+    \node[popout,above left=7pt of default.north] (default-constraint) {$r_1 = r_2$};
+    \draw (default.north) edge[{Circle[length=2.5pt]}-] (default-constraint.south east);
+
+    \node[popout,right=7pt of concat-rope] (concat-rope-constraint) {$r_1 = r_2 = \code{rope\_r}$};
+    \draw (concat-rope) edge[{Circle[length=2.5pt]}-] (concat-rope-constraint);
+
+    \node[popout,right=7pt of concat-str] (concat-str-constraint) {$r_1 = r_2 = \code{str\_r}$};
+    \draw (concat-str.east) edge[{Circle[length=2.5pt]}-] (concat-str-constraint);
+
+    \node[popout,right=7pt of foldr-cons] (foldr-cons-constraint) {$r_1 = \code{cons\_r}$};
+    \draw (foldr-cons.east) edge[{Circle[length=2.5pt]}-] (foldr-cons-constraint);
+
+    \node[popout,right=7pt of foldr-rope] (foldr-rope-constraint) {$r_1 = \code{rope\_r}$};
+    \draw (foldr-rope.east) edge[{Circle[length=2.5pt]}-] (foldr-rope-constraint);
+
+    \node[popout,right=7pt of foldr-str] (foldr-str-constraint) {$r_1 = \code{str\_r}$};
+    \draw (foldr-str.east) edge[{Circle[length=2.5pt]}-] (foldr-str-constraint);
+
+    \node[popout,right=7pt of prepend-cons] (prepend-cons-constraint) {$r_2 = \code{cons\_r}$};
+    \draw (prepend-cons.east) edge[{Circle[length=2.5pt]}-] (prepend-cons-constraint);
+
+    \node[popout,right=7pt of prepend-rope] (prepend-rope-constraint) {$r_2 = \code{rope\_r}$};
+    \draw (prepend-rope.east) edge[{Circle[length=2.5pt]}-] (prepend-rope-constraint);
+
+    \node[popout,right=7pt of prepend-str] (prepend-str-constraint) {$r_2 = \code{str\_r}$};
+    \draw (prepend-str.east) edge[{Circle[length=2.5pt]}-] (prepend-str-constraint);
+
+    \node[below left=1pt and 4pt of prepend-dot,popout] (factor) {$\times$\code{n}};
+    \draw (prepend-dot) -| (factor.north);
+  \end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}{\textbf{C8:} Multiple Solvers \hfill \textbf{R3}, \textbf{P4}}
+  Complete solvers \hfill \code{exhaustive, bottom-up, greedy, z3} \pause
+
+  \vfill
+  Heuristics-based solvers \hfill \code{mixed, transfer} \pause
+
+  \vfill
+  Randomly generated programs \pause
+
+  \vfill
+  \centering
+  \resizebox{0.8\textwidth}{!}{\clipbox{0pt 0pt 0pt 20pt}{\input{figures/analysisTimeBySolver.pgf}}}
+\end{frame}
+
+\begin{frame}{\textbf{C8:} Results \hfill \textbf{R3}, \textbf{P4}}
+  \vfill
+  \centering
+  \sisetup{round-mode=places,round-precision=2}
+  \begin{tblr}{
+      colspec={l@{\qquad}S[table-format=1.2]S[table-format=1.2]S[table-format=1.2]S[table-format=1.2]@{\qquad} S[table-format=1.2] S[table-format=1.2]S[table-format=1.2]},
+      cell{1}{2}={c=4}{c},
+      cell{1}{6}={c=3}{c},
+      cells={fg=black},
+      row{1-2}={guard},
+    }
+     & \tblronly{2-}{\SetColumn{bg=light blue}}Compilation time (s) & \tblronly{2-}{\SetColumn{bg=light blue}} & \tblronly{2-}{\SetColumn{bg=light blue}} & \tblronly{2-}{\SetColumn{bg=light blue}} & Running time (s) & & \\
+    Program & \code{ocamlopt} & \code{mi-ml} & \code{mixed} & \code{transfer} & \code{ocamlopt} & \code{mi-ml} & \code{mixed} \\ \midrule
+    %% \input{figures/handwrittenTable.tex}
+    \code{show\_seq} & 0.11893570385185186 & 0.46765740470000006 & 1.0002836864 & 0.9133791154 & 9.1653023508 & 8.628994019399999 & 0.02645045510434783 \\
+    \code{prepend} & 0.11122990718518518 & 0.4852375096 & 5.296598548899999 & 0.9384299135999999 & 0.026694937016806725 & 0.027023933918918917 & 0.023711387221311477 \\
+    \code{append} & 0.10954015333333335 & 0.4548701694 & 5.340259603199999 & 0.9643638993 & 171.4106820776 & 164.69511481310002 & 0.022933267212121213 \\
+    \code{pattern} & 0.21083653207142858 & 0.6550604686 & 3.5666536212000004 & 1.8774878489000002 & 9.1270413927 & 8.807432507199998 & 0.13877640590476187 \\
+    \code{dijkstra} & 0.18934887786666668 & 0.6248261046000001 & 0.9956132031000002 & 0.9462301581000002 & 6.722684301400001 & 6.257983308999999 & 6.9067360158 \\
+    \code{celebrity} & 0.19792195993333334 & 0.5101833371 & 0.9051497183000002 & 1.0386059767 & 17.004707268599997 & 17.8571870824 & 11.118303377 \\
+  \end{tblr}
+\end{frame}
+
 \section{Conclusion}
+\insertsectionpage
+
+\begin{frame}{Summary}
+  \footnotesize
+  \textbf{Papers}
+  {\renewcommand{\theenumi}{P\arabic{enumi}}
+  \begin{enumerate}
+  \item Creating Domain-Specific Languages by Composing Syntactical Constructs
+  \item Resolvable Ambiguity: Principled Resolution of Syntactically Ambiguous Programs
+  \item Statically Resolvable Ambiguity
+  \item Repr Types: One Abstraction to Rule Them All
+  \end{enumerate}}
+
+  \vfill
+  \textbf{Contributions}
+  {\renewcommand{\theenumi}{C\arabic{enumi}}
+  \begin{enumerate}
+  \item Resolvable Ambiguity
+  \item Syncons
+  \item Dynamic Resolvability via Finite Automata
+  \item Property-Based Testing for Static Resolvability
+  \item Embeddable Resolvable Ambiguity
+  \item A Mechanized Proof of Static Resolvability for C5
+  \item \code{repr} Types and Compiler-selected Representations
+  \item A Strategy for Selecting Representations for C7
+  \end{enumerate}}
+\end{frame}
 
 \insertendpage
+
+\section{References}
+
+\begin{frame}[allowframebreaks]{References}
+\bibliographystyle{plainnat}
+\setcitestyle{authoryear}
+\bibliography{All} % References file
+\end{frame}
 
 \end{document}

@@ -38,6 +38,8 @@
             lualatex-math
             firamath
             adjustbox
+            tabularray
+            ninecolors
 
             inconsolata
             upquote

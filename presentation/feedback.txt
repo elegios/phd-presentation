@@ -1,0 +1,12 @@
+why visibly pushdown, felt missing
+a bit abstract, especially on the slide about abstractions, and that there's a bunch of extra speech that's not on the slide
+maybe have the contribution to research area tables
+Consider having the area order, not the C order
+Clearer highlighting on the repr code example (light/color underneath)
+Maybe change the example from +- to +*
+Maybe examples for the definitions of RA
+Legend for the classifications of languages
+Maybe highlight that Opam is *the* repository for ocaml
+Oral agenda, where the research questions (related work, etc.) are, that kind of thing
+Mention that the two trees go up and down, for ease-of-parsing
+can highlight what's particularly important (key insights) verbally (tone, etc.)
