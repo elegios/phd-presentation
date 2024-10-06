@@ -208,7 +208,69 @@ Scale=.9,
   \end{enumerate}
 \end{frame}
 
-\section{Research Areas}
+\section{Papers}
+
+\begin{frame}{Main Papers}
+  \vspace{-7mm}
+  \begin{exampleblock}{Creating Domain-Specific Languages by Composing Syntactical
+      Constructs}
+    \textbf{Viktor Palmkvist} and David Broman.
+
+    Practical Aspects of Declarative Languages 2019. Lecture Notes in
+    Computer Science, volume 11372.
+  \end{exampleblock}
+
+  \begin{exampleblock}{Resolvable Ambiguity: Principled Resolution of Syntactically
+      Ambiguous Programs}
+    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, and David
+    Broman
+
+    Proceedings of the 30th ACM SIGPLAN International Conference on
+    Compiler Construction (CC 2021)%
+  \end{exampleblock}
+
+  \begin{exampleblock}{Statically Resolvable Ambiguity}
+    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, David
+    Broman
+
+    Proceedings of the ACM on Programming Languages, Volume 7, Issue
+    POPL (2023)
+  \end{exampleblock}
+
+  \begin{block}{Repr Types: One Abstraction to Rule Them All}
+    \textbf{Viktor Palmkvist}, Anders Ågren Thuné, Elias Castegren,
+    and David Broman
+
+    Submitted, preprint available~\citep{palmkvistReprTypesOne2024}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Other Papers}
+  \vspace{-7mm}
+  \begin{exampleblock}{Partial Evaluation of Forward-Mode Automatic Differentiation}
+    Oscar Eriksson, \textbf{Viktor Palmkvist}, and David Broman.
+
+    Proceedings of the 22nd ACM SIGPLAN International Conference on
+    Generative Programming: Concepts and Experiences (GPCE 2023)
+  \end{exampleblock}
+
+  \begin{block}{Trellis: A Domain-Specific Language for Hidden Markov Models with
+      Sparse Transitions}
+    Lars Hummelgren, \textbf{Viktor Palmkvist}, Linnea Stjerna,
+    Xuechun Xu, Joakim Jaldén, and David Broman
+
+    Accepted
+  \end{block}
+
+  \begin{block}{TreePPL: A Universal Probabilistic Programming Language for Phylogenetics}
+    Viktor Senderov, Jan Kudlicka, Daniel Lundén, \textbf{Viktor
+      Palmkvist}, Mariana P. Braga, David Broman, and Fredrik Ronquist
+
+    Preprint, bioRxiv~\citep{senderovTreePPLUniversalProbabilistic2023}
+  \end{block}
+\end{frame}
+
+\section[R1: Implementation]{Implementing DSLs and Programming Languages}
 
 \insertsectionpage
 
@@ -365,6 +427,83 @@ Scale=.9,
     language features across languages?
   \end{center}
 \end{frame}
+
+\subsection{C2: Syncons}
+
+\begin{frame}[fragile]{\textbf{C2:} Syncons \hfill \textbf{R1}, \textbf{P1}}
+  Define self-contained language constructs that include:\\
+  1: Syntax \hfill 2: Binding semantics \hfill 3: Run-time semantics
+
+  \vfill
+  \begin{columns}
+    \column{0.5\textwidth}
+    \begin{lstlisting}[language=syncon,gobble=6,linewidth=\textwidth]
+      syntax local : Statement =
+        `\tikzmark{syntax}`"local" x:Identifier
+        ("=" e:Expr)?`\tikzmark{syntax-end}`
+      {
+        `\tikzmark{properties}`#bind x after
+        #scope (e)`\tikzmark{properties-end}`
+
+        `\tikzmark{body}`BExpr'
+          defAfter 'id(x) =
+          (@ref (@deref
+            't(foldl e _ (e)
+              (BExpr' @unit))))`\tikzmark{body-end}`
+      }                                `\tikzmark{right-edge}`
+    \end{lstlisting}
+
+    \onslide<2->
+
+    \begin{tikzpicture}[remember picture,overlay]
+      \coordinate (syntax) at ([shift={(-3pt,1.5ex)}]pic cs:syntax);
+      \coordinate (properties) at ([shift={(-3pt,1.5ex)}]pic cs:properties);
+      \coordinate (body) at ([shift={(-3pt,1.5ex)}]pic cs:body);
+
+      \coordinate (syntax-end) at ([yshift=-0.5ex]pic cs:syntax-end);
+      \coordinate (properties-end) at ([yshift=-0.5ex]pic cs:properties-end);
+      \coordinate (body-end) at ([yshift=-0.5ex]pic cs:body-end);
+
+      \coordinate (right-edge) at ([xshift=3pt]pic cs:right-edge);
+
+      \draw[rounded corners] (syntax) rectangle (syntax-end -| right-edge);
+      \node[anchor=north east,inner sep=3pt] at (syntax -| right-edge) {Syntax};
+
+      \onslide<3->{
+        \draw[rounded corners] (properties) rectangle (properties-end -| right-edge);
+        \node[anchor=north east,inner sep=3pt] at (properties -| right-edge) {Properties};
+      }
+
+      \onslide<4->{
+        \draw[rounded corners] (body) rectangle (body-end -| right-edge);
+        \node[anchor=north east,inner sep=3pt] at (body -| right-edge) {Body};
+      }
+    \end{tikzpicture}
+
+    \column{0.5\textwidth}
+    \begin{itemize}
+    \item<2-> Regular expression like syntax per \code{syncon},
+      context-free grammar in combination.
+    \item<3-> Properties for binding semantics, but also precedence etc.
+    \item<4-> Run-time semantics by translation to another language, also
+      defined with \code{syncons}, i.e., like a macro.
+    \end{itemize}
+  \end{columns}
+  \onslide<1->
+\end{frame}
+
+\begin{frame}{\textbf{C2:} Evaluation \hfill \textbf{R1}, \textbf{P1}}
+  \begin{itemize}
+  \item Implement subsets of OCaml and Lua \pause
+  \item Compose them, adding pattern matching to Lua \pause
+  \item Syntactic composition leads to ambiguity relatively easily,
+    but that might not be an issue
+  \end{itemize}
+\end{frame}
+
+\section[R2: Ambiguity]{Ambiguity in Programming Languages}
+
+\insertsectionpage
 
 \subsection{R2: Ambiguity in Programming Languages}
 
@@ -598,182 +737,6 @@ Scale=.9,
   \end{center}
 \end{frame}
 
-\subsection{R2: High-Level Data Structures}
-
-\begin{frame}{Data Structures in Programming}
-  \begin{itemize}
-  \item Many choices \hfill \code{LinkedList, FingerTree, Array, Rope, $\ldots$}\pause
-  \item Choices matter \hfill \code{O(1) vs O(log n) vs O(n) vs $\ldots$}\pause
-  \item No universally optimal choice \hfill \code{Workload dependent}\pause
-  \item Volatile \hfill \code{Program edits}\pause
-  \item Non-atomic \hfill \code{start $\rightarrow$ end}\pause
-  \end{itemize}
-
-  \vfill
-  \begin{center}
-    Can the compiler do this for us?
-  \end{center}
-\end{frame}
-
-\begin{frame}{Automatic Data Structure Selection}
-  \begin{columns}
-    \column{0.5\textwidth}
-    \textbf{Dynamic (online) decisions}
-    \begin{itemize}
-    \item Adapts to actual workload
-    \item Overhead, limitations on analysis
-    \item Typically supports representation switching
-    \end{itemize}
-
-    \onslide<2->\textbf{Static (offline) decisions}\hfill\tikzmark{data-left-top}
-    \begin{itemize}
-    \item Static analysis/benchmarking
-    \item Typically does not support representation switching
-    \end{itemize}
-
-    \column{0.5\textwidth}
-    \onslide<3->
-    \textbf{Four axes of extensibility}
-    \begin{itemize}
-    \item Abstract types
-    \item Representations
-    \item Operations
-    \item Operation implementations
-    \end{itemize}
-
-    \onslide<4->\tikzmark{data-right-top}\textbf{Flexibility}
-    \begin{itemize}
-    \item Fully semantically equivalent
-    \end{itemize}
-    vs.
-    \begin{itemize}
-    \item Observably equivalent
-    \end{itemize}
-  \end{columns}
-
-
-  \onslide<1->
-  \begin{tikzpicture}[remember picture,overlay]
-    \tikzset{floating box/.style={color=navy,fill=sand,drop shadow={},font=\footnotesize}}
-
-    \coordinate (data-left-top)  at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:data-left-top);
-    \coordinate (data-right-top) at ([yshift=\ht\charbox,xshift=1cm]pic cs:data-right-top);
-
-    \node<1>[floating box,anchor=north] at (data-left-top -| current page.center) {
-      \begin{tabular}{ll}
-        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
-        Safe and flexible adaptation via alternate data structure representations & \cite{kusumSafeFlexibleAdaptation2016} \\
-        Dynamically transforming data structures & \cite{osterlundDynamicallyTransformingData2013} \\
-        CoCo: sound and adaptive replacement of Java collections & \cite{xuCoCoSoundAdaptive2013} \\
-      \end{tabular}
-    };
-    \node<2>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-left-top -| current page.center) {
-      \begin{tabular}{ll}
-        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
-        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
-        Automatic coding: choice of data structures & \cite{lowAutomaticCodingChoice1976} \\
-        Fine-tuning data structures for query processing & \cite{shaikhhaFineTuningDataStructures2023} \\
-        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
-      \end{tabular}
-    };
-
-    \node<3>[floating box,anchor=north] at (data-right-top -| current page.center) {
-      \begin{tabular}{ll}
-        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
-        Automating relational operations on data structures & \cite{cohenAutomatingRelationalOperations1993} \\
-        Chameleon: adaptive selection of collections & \cite{shachamChameleonAdaptiveSelection2009} \\
-        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
-        An automatic technique for selection of data representations in SETL programs & \cite{schonbergAutomaticTechniqueSelection1981} \\
-      \end{tabular}
-    };
-
-    \node<4>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-right-top -| current page.center) {
-      \begin{tabular}{ll}
-        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
-        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
-        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
-        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
-      \end{tabular}
-    };
-  \end{tikzpicture}
-  \onslide<5>
-\end{frame}
-
-\begin{frame}{Research Question}
-  \vfill
-  \begin{center}
-    \textbf{R3:} How can we automatically select efficient
-    representations in an extensible manner while still allowing
-    representation switching, semantically-aware selection, and low
-    compilation time and run-time overhead?
-  \end{center}
-\end{frame}
-
-\section{Papers}
-
-\begin{frame}{Main Papers}
-  \vspace{-7mm}
-  \begin{exampleblock}{Creating Domain-Specific Languages by Composing Syntactical
-      Constructs}
-    \textbf{Viktor Palmkvist} and David Broman.
-
-    Practical Aspects of Declarative Languages 2019. Lecture Notes in
-    Computer Science, volume 11372.
-  \end{exampleblock}
-
-  \begin{exampleblock}{Resolvable Ambiguity: Principled Resolution of Syntactically
-      Ambiguous Programs}
-    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, and David
-    Broman
-
-    Proceedings of the 30th ACM SIGPLAN International Conference on
-    Compiler Construction (CC 2021)%
-  \end{exampleblock}
-
-  \begin{exampleblock}{Statically Resolvable Ambiguity}
-    \textbf{Viktor Palmkvist}, Elias Castegren, Philipp Haller, David
-    Broman
-
-    Proceedings of the ACM on Programming Languages, Volume 7, Issue
-    POPL (2023)
-  \end{exampleblock}
-
-  \begin{block}{Repr Types: One Abstraction to Rule Them All}
-    \textbf{Viktor Palmkvist}, Anders Ågren Thuné, Elias Castegren,
-    and David Broman
-
-    Submitted, preprint available~\citep{palmkvistReprTypesOne2024}
-  \end{block}
-\end{frame}
-
-\begin{frame}{Other Papers}
-  \vspace{-7mm}
-  \begin{exampleblock}{Partial Evaluation of Forward-Mode Automatic Differentiation}
-    Oscar Eriksson, \textbf{Viktor Palmkvist}, and David Broman.
-
-    Proceedings of the 22nd ACM SIGPLAN International Conference on
-    Generative Programming: Concepts and Experiences (GPCE 2023)
-  \end{exampleblock}
-
-  \begin{block}{Trellis: A Domain-Specific Language for Hidden Markov Models with
-      Sparse Transitions}
-    Lars Hummelgren, \textbf{Viktor Palmkvist}, Linnea Stjerna,
-    Xuechun Xu, Joakim Jaldén, and David Broman
-
-    Accepted
-  \end{block}
-
-  \begin{block}{TreePPL: A Universal Probabilistic Programming Language for Phylogenetics}
-    Viktor Senderov, Jan Kudlicka, Daniel Lundén, \textbf{Viktor
-      Palmkvist}, Mariana P. Braga, David Broman, and Fredrik Ronquist
-
-    Preprint, bioRxiv~\citep{senderovTreePPLUniversalProbabilistic2023}
-  \end{block}
-\end{frame}
-
-\section{Contributions}
-\insertsectionpage
-
 \subsection{C1: Resolvable Ambiguity}
 
 \begin{frame}{\textbf{C1:} Resolvable Ambiguity \hfill \textbf{R2}, \textbf{P1}-\textbf{3}}
@@ -798,79 +761,6 @@ Scale=.9,
     \textbf{Dynamic} & \textbf{Static} \\
     Is a given \emph{program} resolvable? & Is a given \emph{language} resolvable? \\
   \end{tblr}
-\end{frame}
-
-\subsection{C2: Syncons}
-
-\begin{frame}[fragile]{\textbf{C2:} Syncons \hfill \textbf{R1}, \textbf{P1}}
-  Define self-contained language constructs that include:\\
-  1: Syntax \hfill 2: Binding semantics \hfill 3: Run-time semantics
-
-  \vfill
-  \begin{columns}
-    \column{0.5\textwidth}
-    \begin{lstlisting}[language=syncon,gobble=6,linewidth=\textwidth]
-      syntax local : Statement =
-        `\tikzmark{syntax}`"local" x:Identifier
-        ("=" e:Expr)?`\tikzmark{syntax-end}`
-      {
-        `\tikzmark{properties}`#bind x after
-        #scope (e)`\tikzmark{properties-end}`
-
-        `\tikzmark{body}`BExpr'
-          defAfter 'id(x) =
-          (@ref (@deref
-            't(foldl e _ (e)
-              (BExpr' @unit))))`\tikzmark{body-end}`
-      }                                `\tikzmark{right-edge}`
-    \end{lstlisting}
-
-    \onslide<2->
-
-    \begin{tikzpicture}[remember picture,overlay]
-      \coordinate (syntax) at ([shift={(-3pt,1.5ex)}]pic cs:syntax);
-      \coordinate (properties) at ([shift={(-3pt,1.5ex)}]pic cs:properties);
-      \coordinate (body) at ([shift={(-3pt,1.5ex)}]pic cs:body);
-
-      \coordinate (syntax-end) at ([yshift=-0.5ex]pic cs:syntax-end);
-      \coordinate (properties-end) at ([yshift=-0.5ex]pic cs:properties-end);
-      \coordinate (body-end) at ([yshift=-0.5ex]pic cs:body-end);
-
-      \coordinate (right-edge) at ([xshift=3pt]pic cs:right-edge);
-
-      \draw[rounded corners] (syntax) rectangle (syntax-end -| right-edge);
-      \node[anchor=north east,inner sep=3pt] at (syntax -| right-edge) {Syntax};
-
-      \onslide<3->{
-        \draw[rounded corners] (properties) rectangle (properties-end -| right-edge);
-        \node[anchor=north east,inner sep=3pt] at (properties -| right-edge) {Properties};
-      }
-
-      \onslide<4->{
-        \draw[rounded corners] (body) rectangle (body-end -| right-edge);
-        \node[anchor=north east,inner sep=3pt] at (body -| right-edge) {Body};
-      }
-    \end{tikzpicture}
-
-    \column{0.5\textwidth}
-    \begin{itemize}
-    \item<2-> Regular expression like syntax per \code{syncon},
-      context-free grammar in combination.
-    \item<3-> Properties for binding semantics, but also precedence etc.
-    \item<4-> Run-time semantics by translation to another language, also
-      defined with \code{syncons}, i.e., like a macro.
-    \end{itemize}
-  \end{columns}
-  \onslide<1->
-\end{frame}
-
-\begin{frame}{\textbf{C2:} Evaluation \hfill \textbf{R1}, \textbf{P1}}
-  \begin{itemize}
-  \item Implement subsets of OCaml and Lua \pause
-  \item Compose them, adding pattern matching to Lua \pause
-  \item Syntactic composition leads to ambiguity relatively easily,
-    but that might not be an issue
-  \end{itemize}
 \end{frame}
 
 \subsection{C3: Dynamic Resolvability via Finite Automata}
@@ -1131,13 +1021,125 @@ Scale=.9,
   Core idea: show that adding all possible parentheses yields an unambiguous program
 \end{frame}
 
+\section[R3: Data Structures]{High-Level Data Structures}
+
+\insertsectionpage
+
+\subsection{R2: High-Level Data Structures}
+
+\begin{frame}{Data Structures in Programming}
+  \begin{itemize}
+  \item Many choices \hfill \code{LinkedList, FingerTree, Array, Rope, $\ldots$}\pause
+  \item Choices matter \hfill \code{O(1) vs O(log n) vs O(n) vs $\ldots$}\pause
+  \item No universally optimal choice \hfill \code{Workload dependent}\pause
+  \item Volatile \hfill \code{Program edits}\pause
+  \item Non-atomic \hfill \code{start $\rightarrow$ end}\pause
+  \end{itemize}
+
+  \vfill
+  \begin{center}
+    Can the compiler do this for us?
+  \end{center}
+\end{frame}
+
+\begin{frame}{Automatic Data Structure Selection}
+  \begin{columns}
+    \column{0.5\textwidth}
+    \textbf{Dynamic (online) decisions}
+    \begin{itemize}
+    \item Adapts to actual workload
+    \item Overhead, limitations on analysis
+    \item Typically supports representation switching
+    \end{itemize}
+
+    \onslide<2->\textbf{Static (offline) decisions}\hfill\tikzmark{data-left-top}
+    \begin{itemize}
+    \item Static analysis/benchmarking
+    \item Typically does not support representation switching
+    \end{itemize}
+
+    \column{0.5\textwidth}
+    \onslide<3->
+    \textbf{Four axes of extensibility}
+    \begin{itemize}
+    \item Abstract types
+    \item Representations
+    \item Operations
+    \item Operation implementations
+    \end{itemize}
+
+    \onslide<4->\tikzmark{data-right-top}\textbf{Flexibility}
+    \begin{itemize}
+    \item Fully semantically equivalent
+    \end{itemize}
+    vs.
+    \begin{itemize}
+    \item Observably equivalent
+    \end{itemize}
+  \end{columns}
+
+
+  \onslide<1->
+  \begin{tikzpicture}[remember picture,overlay]
+    \tikzset{floating box/.style={color=navy,fill=sand,drop shadow={},font=\footnotesize}}
+
+    \coordinate (data-left-top)  at ([yshift=\ht\charbox,xshift=-3.5cm]pic cs:data-left-top);
+    \coordinate (data-right-top) at ([yshift=\ht\charbox,xshift=1cm]pic cs:data-right-top);
+
+    \node<1>[floating box,anchor=north] at (data-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        Safe and flexible adaptation via alternate data structure representations & \cite{kusumSafeFlexibleAdaptation2016} \\
+        Dynamically transforming data structures & \cite{osterlundDynamicallyTransformingData2013} \\
+        CoCo: sound and adaptive replacement of Java collections & \cite{xuCoCoSoundAdaptive2013} \\
+      \end{tabular}
+    };
+    \node<2>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-left-top -| current page.center) {
+      \begin{tabular}{ll}
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
+        Automatic coding: choice of data structures & \cite{lowAutomaticCodingChoice1976} \\
+        Fine-tuning data structures for query processing & \cite{shaikhhaFineTuningDataStructures2023} \\
+        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
+      \end{tabular}
+    };
+
+    \node<3>[floating box,anchor=north] at (data-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+        Automating relational operations on data structures & \cite{cohenAutomatingRelationalOperations1993} \\
+        Chameleon: adaptive selection of collections & \cite{shachamChameleonAdaptiveSelection2009} \\
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        An automatic technique for selection of data representations in SETL programs & \cite{schonbergAutomaticTechniqueSelection1981} \\
+      \end{tabular}
+    };
+
+    \node<4>[floating box,anchor=south,yshift=0.5\ht\charbox] at (data-right-top -| current page.center) {
+      \begin{tabular}{ll}
+        Code generation for abstract data types based on program analysis & \cite{binCodeGenerationAbstract2015} \\
+        Complexity-guided container replacement synthesis & \cite{wangComplexityguidedContainerReplacement2022} \\
+        Just-in-time data structures & \cite{dewaelJustintimeDataStructures2015} \\
+        Darwinian data structure selection & \cite{basiosDarwinianDataStructure2018} \\
+      \end{tabular}
+    };
+  \end{tikzpicture}
+  \onslide<5>
+\end{frame}
+
+\begin{frame}{Research Question}
+  \vfill
+  \begin{center}
+    \textbf{R3:} How can we automatically select efficient
+    representations in an extensible manner while still allowing
+    representation switching, semantically-aware selection, and low
+    compilation time and run-time overhead?
+  \end{center}
+\end{frame}
+
 \subsection{C7: repr Types and Compiler-selected Representations}
 
 \begin{frame}[fragile]{\textbf{C7:} \code{repr} Types and Compiler-selected Representations \hfill \textbf{R3}, \textbf{P4}}
-  Goals: extensibility, flexibility, and representation switching \pause
-
-  \vfill
-  Prototype extending OCaml
+  Examples in OCaml syntax
   \pause
 
   \vfill
@@ -1457,7 +1459,7 @@ Scale=.9,
 
 \insertendpage
 
-\section{References}
+%% \section{References}
 
 \begin{frame}[allowframebreaks]{References}
 \bibliographystyle{plainnat}

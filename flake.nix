@@ -11,6 +11,7 @@
       pkgs = nixpkgs.legacyPackages.${system};
       ocamlPackages = pkgs.ocaml-ng.ocamlPackages_5_0;
       tex = with pkgs.texlive; combine {
+          "import" = pkgs.texlive.import;
           inherit
             scheme-basic
             latexmk
